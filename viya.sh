@@ -1,127 +1,145 @@
 #!/bin/bash
 # ==============================================================================
 # Fichier : viya.sh
-# Description : Menu principal et orchestrateur pour l'administration SAS Viya 4
+# Description : Orchestrateur d'administration SAS Viya 4
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/config.env"
 CMD_DIR="$SCRIPT_DIR/cmd"
 
-# --- Création de la config si elle n'existe pas ---
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "Création du fichier $CONFIG_FILE..."
-    cat <<EOF > "$CONFIG_FILE"
-export SERVER_URL=""
-export TOKEN=""
-export DEFAULT_NAMESPACE="sas-viya"
-export INSECURE_SKIP_TLS_VERIFY="false"
-export AUDIT_OUT_DIR="./rapports_audit"
-EOF
-    chmod 600 "$CONFIG_FILE"
+# ==============================================================================
+# 1. GESTION DE LA CONFIGURATION
+# ==============================================================================
+
+# Charge le fichier s'il existe
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
 fi
 
-# Chargement de la configuration
-source "$CONFIG_FILE"
-
-# --- Fonction de mise à jour de la config ---
-update_config_key() {
+# Fonction pour ajouter ou mettre à jour une variable sans créer de doublon
+save_to_config() {
     local key=$1
     local value=$2
-    # Échapper les caractères spéciaux pour sed si besoin
-    if grep -q "^export $key=" "$CONFIG_FILE"; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s|^export $key=.*|export $key=\"$value\"|" "$CONFIG_FILE"
-        else
-            sed -i "s|^export $key=.*|export $key=\"$value\"|" "$CONFIG_FILE"
-        fi
-    else
-        echo "export $key=\"$value\"" >> "$CONFIG_FILE"
+    
+    # Si le fichier existe, on supprime l'ancienne valeur
+    if [ -f "$CONFIG_FILE" ]; then
+        grep -v "^export $key=" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"
+        mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
     fi
+    
+    # On ajoute la nouvelle valeur
+    echo "export $key=\"$value\"" >> "$CONFIG_FILE"
+    chmod 600 "$CONFIG_FILE" # Sécurité
 }
 
-# --- Options TLS ---
-TLS_OPTIONS=""
-if [ "$INSECURE_SKIP_TLS_VERIFY" == "true" ]; then
-    TLS_OPTIONS="--insecure-skip-tls-verify=true"
-fi
+# Vérifie les prérequis et demande ce qui manque
+check_and_prompt_vars() {
+    local updated=false
 
-# ==============================================================================
-# LOGIQUE DE CONNEXION
-# ==============================================================================
-
-ensure_config_exists() {
     if [ -z "$SERVER_URL" ]; then
-        echo "⚠️  URL manquante."
-        read -p "👉 URL du cluster (ex: https://api...:6443) : " new_url
-        update_config_key "SERVER_URL" "$new_url"
-        SERVER_URL="$new_url"
+        read -p "👉 URL du cluster OpenShift (ex: https://api.cluster:6443) : " SERVER_URL
+        save_to_config "SERVER_URL" "$SERVER_URL"
     fi
+
     if [ -z "$TOKEN" ]; then
-        echo "⚠️  Token manquant."
-        read -s -p "👉 Token de connexion : " new_token
+        read -s -p "👉 Token de connexion OpenShift : " TOKEN
         echo ""
-        update_config_key "TOKEN" "$new_token"
-        TOKEN="$new_token"
+        save_to_config "TOKEN" "$TOKEN"
+    fi
+
+    if [ -z "$DEFAULT_NAMESPACE" ]; then
+        read -p "👉 Namespace SAS Viya [sas-viya par défaut] : " input_ns
+        DEFAULT_NAMESPACE=${input_ns:-sas-viya}
+        save_to_config "DEFAULT_NAMESPACE" "$DEFAULT_NAMESPACE"
+    fi
+
+    if [ -z "$OC_BIN_PATH" ]; then
+        read -p "👉 Chemin COMPLET du binaire oc (ex: /usr/local/bin/oc ou C:/oc/oc.exe) : " OC_BIN_PATH
+        save_to_config "OC_BIN_PATH" "$OC_BIN_PATH"
+    fi
+    
+    # --- INJECTION DANS LE PATH ---
+    # On extrait le dossier contenant le binaire oc et on le met au début du PATH
+    if [ -n "$OC_BIN_PATH" ] && [ -f "$OC_BIN_PATH" ]; then
+        export PATH="$(dirname "$OC_BIN_PATH"):$PATH"
+    elif [ -n "$OC_BIN_PATH" ]; then
+        echo "⚠️  Attention: le fichier $OC_BIN_PATH est introuvable. Assurez-vous que 'oc' est accessible."
+    fi
+    
+    # Pour Viya, on ignore le TLS par défaut pour éviter les blocages de certificats internes
+    if [ -z "$INSECURE_SKIP_TLS_VERIFY" ]; then
+        INSECURE_SKIP_TLS_VERIFY="true"
+        save_to_config "INSECURE_SKIP_TLS_VERIFY" "$INSECURE_SKIP_TLS_VERIFY"
+    fi
+    
+    # Dossier d'export par défaut
+    if [ -z "$AUDIT_OUT_DIR" ]; then
+        AUDIT_OUT_DIR="$SCRIPT_DIR/rapports_audit"
+        save_to_config "AUDIT_OUT_DIR" "$AUDIT_OUT_DIR"
     fi
 }
 
-check_session() {
-    oc whoami > /dev/null 2>&1
-    return $?
-}
-
-switch_namespace() {
-    if [ ! -z "$DEFAULT_NAMESPACE" ]; then
-        local CURRENT_NS=$(oc project -q 2>/dev/null)
-        if [ "$CURRENT_NS" != "$DEFAULT_NAMESPACE" ]; then
-            echo "📂 Activation du namespace : $DEFAULT_NAMESPACE"
-            oc project "$DEFAULT_NAMESPACE" > /dev/null
-        fi
-    fi
-}
+# ==============================================================================
+# 2. LOGIQUE DE CONNEXION (Avec retry unique)
+# ==============================================================================
 
 do_login() {
-    ensure_config_exists
+    # 1. On s'assure d'avoir toutes les infos
+    check_and_prompt_vars
 
-    if check_session; then
-        switch_namespace
-        return
+    local TLS_OPT=""
+    if [ "$INSECURE_SKIP_TLS_VERIFY" == "true" ]; then
+        TLS_OPT="--insecure-skip-tls-verify=true"
     fi
 
-    echo "🔌 Connexion à $SERVER_URL..."
-    oc login "$SERVER_URL" --token="$TOKEN" $TLS_OPTIONS > /dev/null 2>&1
-    
-    if [ $? -eq 0 ]; then
-        switch_namespace
+    # 2. Vérification rapide : est-on déjà connecté avec un token valide ?
+    if oc whoami >/dev/null 2>&1; then
+        oc project "$DEFAULT_NAMESPACE" >/dev/null 2>&1
+        return 0
+    fi
+
+    # 3. Première tentative de connexion
+    echo "🔌 Tentative de connexion à $SERVER_URL..."
+    if oc login "$SERVER_URL" --token="$TOKEN" $TLS_OPT >/dev/null 2>&1; then
+        echo "✅ Connexion réussie."
+        oc project "$DEFAULT_NAMESPACE" >/dev/null 2>&1
     else
-        echo "❌ Échec de la connexion (Token expiré ou invalide)."
-        read -s -p "👉 Nouveau Token : " NEW_TOKEN
+        # 4. Échec -> On demande UNE FOIS de resaisir le token
+        echo "❌ Échec de la connexion (Le Token est expiré ou invalide)."
+        read -s -p "👉 Veuillez resaisir un nouveau Token : " NEW_TOKEN
         echo ""
-        if [ -z "$NEW_TOKEN" ]; then exit 1; fi
-
-        update_config_key "TOKEN" "$NEW_TOKEN"
+        
+        if [ -z "$NEW_TOKEN" ]; then 
+            echo "Annulation."
+            exit 1
+        fi
+        
         TOKEN="$NEW_TOKEN"
+        save_to_config "TOKEN" "$TOKEN"
 
-        if oc login "$SERVER_URL" --token="$TOKEN" $TLS_OPTIONS > /dev/null 2>&1; then
-            switch_namespace
+        echo "🔌 Nouvelle tentative..."
+        if oc login "$SERVER_URL" --token="$TOKEN" $TLS_OPT >/dev/null 2>&1; then
+            echo "✅ Connexion réussie."
+            oc project "$DEFAULT_NAMESPACE" >/dev/null 2>&1
         else
-            echo "❌ Échec critique. Vérifiez l'URL ou vos droits."
+            echo "❌ Échec critique de la connexion. Fin du script."
             exit 1
         fi
     fi
 }
 
 do_logout() {
-    echo "👋 Déconnexion..."
+    echo "👋 Déconnexion d'OpenShift..."
     oc logout
 }
 
 # ==============================================================================
-# MENU DYNAMIQUE
+# 3. MOTEUR DE PLUGINS ET MENU
 # ==============================================================================
 
 show_menu() {
+    # On garantit la connexion avant d'afficher le menu
     do_login 
     
     clear
@@ -135,8 +153,9 @@ show_menu() {
     fi
 
     local files=("$CMD_DIR"/*.sh)
+    # Vérification si le dossier est vide
     if [ ! -e "${files[0]}" ]; then
-        echo "   (Aucun script trouvé dans $CMD_DIR/)"
+        echo "   (Aucun plugin trouvé dans $CMD_DIR/)"
         echo "=========================================="
         echo " q) Quitter & Logout"
         echo " x) Quitter (Garder session)"
@@ -144,7 +163,6 @@ show_menu() {
     else
         local i=1
         for f in "${files[@]}"; do
-            # Recherche du tag # TITLE: dans le script
             local TITLE=$(grep "# TITLE:" "$f" | sed 's/# TITLE://' | sed 's/^[[:space:]]*//')
             if [ -z "$TITLE" ]; then TITLE=$(basename "$f"); fi
             echo " $i) $TITLE"
@@ -161,10 +179,11 @@ show_menu() {
         do_logout
         exit 0
     elif [[ "$CHOICE" == "x" ]]; then
-        echo "Bye."
+        echo "Fermeture du menu. Session conservée."
         exit 0
     fi
 
+    # Validation du choix numérique
     if ! [[ "$CHOICE" =~ ^[0-9]+$ ]] || [ "$CHOICE" -lt 1 ] || [ "$CHOICE" -ge $i ]; then
         echo "❌ Choix invalide."
         sleep 1
@@ -180,11 +199,11 @@ show_menu() {
     
     chmod +x "$SELECTED_SCRIPT"
     
-    # On exporte les variables pour que les sous-scripts puissent les utiliser
+    # Exporte les variables utiles pour les sous-scripts
     export DEFAULT_NAMESPACE
     export AUDIT_OUT_DIR
     
-    # Exécution du script
+    # Exécution du plugin
     "$SELECTED_SCRIPT"
     
     echo "------------------------------------------"
@@ -192,9 +211,12 @@ show_menu() {
     show_menu
 }
 
-# Lancement
+# ==============================================================================
+# MAIN
+# ==============================================================================
+
 case "$1" in
-    login) do_login ;;
+    login)  do_login ;;
     logout) do_logout ;;
-    *) show_menu ;;
+    *)      show_menu ;;
 esac

@@ -1,7 +1,8 @@
 awk '
+BEGIN { output=0 }
 /^apiVersion: orchestration.sas.com\/v1alpha1/ { 
-    output=1
     print "---"
+    output=1
 }
 output {
     if ($0 ~ /^  license:/) {
@@ -9,7 +10,7 @@ output {
         print "    secretKeyRef:"
         print "      key: license"
         print "      name: sas-viya"
-        getline # Saute l"ancienne ligne contenant l"url
+        getline # Saute la ligne contenant l"ancienne url
         next
     }
     print $0

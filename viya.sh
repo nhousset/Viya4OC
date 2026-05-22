@@ -134,7 +134,31 @@ do_login() {
 }
 
 # ==============================================================================
-# 3. MENU DYNAMIQUE
+# 3. AFFICHAGE DE L'AIDE
+# ==============================================================================
+
+show_help() {
+    echo -e "${BOLD}${BLUE}======================================================${NC}"
+    echo -e "${BOLD}   SAS VIYA 4 OPS - Aide & Utilisation${NC}"
+    echo -e "${BOLD}${BLUE}======================================================${NC}"
+    echo -e ""
+    echo -e "${BOLD}Usage:${NC}"
+    echo -e "  ./viya.sh [OPTIONS]"
+    echo -e ""
+    echo -e "${BOLD}Options:${NC}"
+    echo -e "  ${CYAN}-h, --help${NC}           Affiche cet écran d'aide."
+    echo -e "  ${CYAN}--cmd <script.sh>${NC}    Exécute directement un script contenu dans le dossier 'cmd'"
+    echo -e "                       sans passer par le menu interactif. L'authentification"
+    echo -e "                       sera vérifiée avant le lancement."
+    echo -e ""
+    echo -e "${BOLD}Exemples:${NC}"
+    echo -e "  ./viya.sh                        ${CYAN}# Lance le menu interactif${NC}"
+    echo -e "  ./viya.sh --cmd check_status.sh  ${CYAN}# Exécute directement 'check_status.sh'${NC}"
+    echo -e ""
+}
+
+# ==============================================================================
+# 4. MENU DYNAMIQUE
 # ==============================================================================
 
 show_menu() {
@@ -194,5 +218,57 @@ show_menu() {
     show_menu
 }
 
-# Lancement
-show_menu
+# ==============================================================================
+# 5. GESTION DES ARGUMENTS ET LANCEMENT
+# ==============================================================================
+
+DIRECT_CMD=""
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        --cmd)
+            if [ -n "$2" ]; then
+                DIRECT_CMD="$2"
+                shift
+            else
+                echo -e "${RED}❌ Erreur : l'argument --cmd nécessite le nom d'un script.${NC}"
+                echo -e "Utilisez --help pour plus d'informations."
+                exit 1
+            fi
+            ;;
+        *)
+            echo -e "${RED}❌ Option inconnue : $1${NC}"
+            echo -e "Utilisez --help pour plus d'informations."
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# Lancement principal
+if [ -n "$DIRECT_CMD" ]; then
+    TARGET_SCRIPT="$CMD_DIR/$DIRECT_CMD"
+    if [ ! -f "$TARGET_SCRIPT" ]; then
+        echo -e "${RED}❌ Erreur : Le script '${DIRECT_CMD}' est introuvable dans le dossier '${CMD_DIR}'.${NC}"
+        exit 1
+    fi
+    
+    # Authentification requise même en mode direct
+    do_login
+    
+    echo -e "\n${YELLOW}🚀 Lancement direct : ${DIRECT_CMD}${NC}"
+    echo -e "${BLUE}------------------------------------------------------${NC}"
+    
+    chmod +x "$TARGET_SCRIPT"
+    export DEFAULT_NAMESPACE AUDIT_OUT_DIR
+    
+    "$TARGET_SCRIPT"
+    exit $?
+else
+    # Lancement du menu par défaut
+    show_menu
+fi

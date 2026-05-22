@@ -55,12 +55,14 @@ check_and_prompt_vars() {
         save_to_config "SERVER_URL" "$SERVER_URL"
     fi
 
-    # 3. Demande du Token (avec affichage de l'URL si dispo)
+    # 3. Demande du Token (avec affichage sympa de l'URL si dispo)
     if [ -z "$TOKEN" ]; then
         if [ -n "$TOKEN_URL" ] && [ "$TOKEN_URL" != "skip" ]; then
-            echo -e "\n${CYAN}ℹ️  Un token est requis pour authentifier vos commandes auprès de l'API OpenShift.${NC}"
-            echo -e "Veuillez vous rendre sur l'URL suivante pour générer et copier votre token :"
-            echo -e "${BOLD}${TOKEN_URL}${NC}\n"
+            echo -e "\n${PURPLE} ╭───────────────────────────────────────────────────────────${NC}"
+            echo -e "${PURPLE} │ ${YELLOW}👋 Bonjour ! Il nous faut un jeton (token) OpenShift.${NC}"
+            echo -e "${PURPLE} │ ${NC}Vous pouvez en générer un tout neuf en un clic via ce lien :${NC}"
+            echo -e "${PURPLE} │ 🌐 ${BOLD}${CYAN}${TOKEN_URL}${NC}"
+            echo -e "${PURPLE} ╰───────────────────────────────────────────────────────────${NC}\n"
         fi
         read -s -p "👉 Token de connexion OpenShift : " TOKEN
         echo ""
@@ -107,10 +109,16 @@ do_login() {
     else
         echo -e "${RED}❌ Token invalide ou expiré.${NC}"
         
-        # Affichage du rappel d'URL si le token a expiré
+        # Affichage du rappel sympa d'URL si le token a expiré
+        echo -e "\n${PURPLE} ╭───────────────────────────────────────────────────────────${NC}"
+        echo -e "${PURPLE} │ ${YELLOW}💡 Oups ! Votre token est invalide ou a expiré.${NC}"
         if [ -n "$TOKEN_URL" ] && [ "$TOKEN_URL" != "skip" ]; then
-            echo -e "Veuillez récupérer un nouveau token ici : ${BOLD}${TOKEN_URL}${NC}"
+            echo -e "${PURPLE} │ ${NC}Pas de panique, allez récupérer un nouveau token juste ici :${NC}"
+            echo -e "${PURPLE} │ 🌐 ${BOLD}${CYAN}${TOKEN_URL}${NC}"
+        else
+            echo -e "${PURPLE} │ ${NC}Connectez-vous à l'interface web OpenShift pour en générer un nouveau.${NC}"
         fi
+        echo -e "${PURPLE} ╰───────────────────────────────────────────────────────────${NC}\n"
         
         read -s -p "👉 Nouveau Token : " NEW_TOKEN ; echo ""
         [ -z "$NEW_TOKEN" ] && exit 1

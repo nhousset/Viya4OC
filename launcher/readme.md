@@ -26,7 +26,7 @@ Le comportement du launcher est entièrement dicté par le fichier `config.json`
     },
     {
       "name": "DailyTask",
-      "command": "/chemin/vers/script.sh",
+      "command": "cmd/03_statut_cas.sh",
       "time_window": "02:00-04:00",
       "interval_sec": 3600
     }

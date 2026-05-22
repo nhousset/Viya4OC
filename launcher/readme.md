@@ -68,9 +68,6 @@ Pour stopper proprement le daemon (utilise le PID enregistré) :
 ./launcher stop
 ```
 
-## 🛠️ Compilation
-
-Pour recompiler cet utilitaire depuis les sources (nécessite l'installation de [Go](https://go.dev/)) :
 
 ```bash
 cd launcher

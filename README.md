@@ -63,23 +63,5 @@ Pour en savoir plus sur son fonctionnement et sa configuration, consultez la doc
 ## 📂 Structure du projet
 
 *   `bin/` : Contient les exécutables prêts à l'emploi (`viya` pour Linux, `viya.exe` pour Windows).
-*   `go/` : Code source de l'application principale écrite en Go (`main.go`).
-*   `src/` : Code source de l'ancienne version pure bash (`viya.sh`).
 *   `cmd/` : Scripts spécialisés exécutés par l'orchestrateur (gestion des pods, quotas, logs, etc.).
 *   `launcher/` : Code source et configuration du daemon de tâches en arrière-plan.
-*   `tools/` : Outils et scripts annexes.
-
-## 🛠️ Compilation depuis les sources (Optionnel)
-
-Si vous souhaitez modifier le code et recompiler l'outil vous-même (nécessite [Go](https://go.dev/)) :
-
-```bash
-# Se placer dans le dossier Go
-cd go
-
-# Compiler pour Linux
-go build -o ../bin/viya main.go
-
-# Compiler pour Windows
-GOOS=windows GOARCH=amd64 go build -o ../bin/viya.exe main.go
-```

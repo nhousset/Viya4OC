@@ -67,9 +67,3 @@ Pour stopper proprement le daemon (utilise le PID enregistré) :
 ```bash
 ./launcher stop
 ```
-
-
-```bash
-cd launcher
-go build -o launcher main.go
-```

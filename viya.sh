@@ -36,16 +36,38 @@ save_to_config() {
 }
 
 check_and_prompt_vars() {
-    if [ -z "$SERVER_URL" ]; then
+    # 1. Demande de l'URL du Token en priorité absolue
+    if [ -z "$TOKEN_URL" ]; then
         echo -e "${YELLOW}Initialisation de la configuration...${NC}"
+        echo -e "Pour vous connecter au cluster, vous aurez besoin d'aller chercher un token sur l'interface web OpenShift."
+        read -p "👉 URL pour récupérer le token OpenShift (ou 's' pour ignorer/skip) : " input_token_url
+        if [ "$input_token_url" = "s" ] || [ "$input_token_url" = "S" ]; then
+            TOKEN_URL="skip"
+        else
+            TOKEN_URL="$input_token_url"
+        fi
+        save_to_config "TOKEN_URL" "$TOKEN_URL"
+    fi
+
+    # 2. URL du cluster
+    if [ -z "$SERVER_URL" ]; then
         read -p "👉 URL du cluster OpenShift : " SERVER_URL
         save_to_config "SERVER_URL" "$SERVER_URL"
     fi
+
+    # 3. Demande du Token (avec affichage de l'URL si dispo)
     if [ -z "$TOKEN" ]; then
+        if [ -n "$TOKEN_URL" ] && [ "$TOKEN_URL" != "skip" ]; then
+            echo -e "\n${CYAN}ℹ️  Un token est requis pour authentifier vos commandes auprès de l'API OpenShift.${NC}"
+            echo -e "Veuillez vous rendre sur l'URL suivante pour générer et copier votre token :"
+            echo -e "${BOLD}${TOKEN_URL}${NC}\n"
+        fi
         read -s -p "👉 Token de connexion OpenShift : " TOKEN
         echo ""
         save_to_config "TOKEN" "$TOKEN"
     fi
+
+    # 4. Namespace et binaire oc
     if [ -z "$DEFAULT_NAMESPACE" ]; then
         read -p "👉 Namespace SAS Viya [sas-viya] : " input_ns
         DEFAULT_NAMESPACE=${input_ns:-sas-viya}
@@ -83,7 +105,13 @@ do_login() {
         echo -e "${GREEN}✅ Connexion réussie.${NC}"
         oc project "$DEFAULT_NAMESPACE" >/dev/null 2>&1
     else
-        echo -e "${RED}❌ Token invalide.${NC}"
+        echo -e "${RED}❌ Token invalide ou expiré.${NC}"
+        
+        # Affichage du rappel d'URL si le token a expiré
+        if [ -n "$TOKEN_URL" ] && [ "$TOKEN_URL" != "skip" ]; then
+            echo -e "Veuillez récupérer un nouveau token ici : ${BOLD}${TOKEN_URL}${NC}"
+        fi
+        
         read -s -p "👉 Nouveau Token : " NEW_TOKEN ; echo ""
         [ -z "$NEW_TOKEN" ] && exit 1
         TOKEN="$NEW_TOKEN"

@@ -1,10 +1,10 @@
 #!/bin/bash
 # ==============================================================================
 # Fichier : viya.sh
-# Description : Orchestrateur d'administration SAS Viya 4 (Version Colorisée)
+# Description : Orchestrateur d'administration SAS Viya 4 (Version Colorisé
 # ==============================================================================
 
-# Définition des couleurs
+# Dénition des couleurs
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -36,11 +36,11 @@ save_to_config() {
 }
 
 check_and_prompt_vars() {
-    # 1. Demande de l'URL du Token en priorité absolue
+    # 1. Demande de l'URL du Token en prioritébsolue
     if [ -z "$TOKEN_URL" ]; then
         echo -e "${YELLOW}Initialisation de la configuration...${NC}"
         echo -e "Pour vous connecter au cluster, vous aurez besoin d'aller chercher un token sur l'interface web OpenShift."
-        read -p "👉 URL pour récupérer le token OpenShift (ou 's' pour ignorer/skip) : " input_token_url
+        read -p " URL pour répér le token OpenShift (ou 's' pour ignorer/skip) : " input_token_url
         if [ "$input_token_url" = "s" ] || [ "$input_token_url" = "S" ]; then
             TOKEN_URL="skip"
         else
@@ -51,32 +51,32 @@ check_and_prompt_vars() {
 
     # 2. URL du cluster
     if [ -z "$SERVER_URL" ]; then
-        read -p "👉 URL du cluster OpenShift : " SERVER_URL
+        read -p " URL du cluster OpenShift : " SERVER_URL
         save_to_config "SERVER_URL" "$SERVER_URL"
     fi
 
     # 3. Demande du Token (avec affichage sympa de l'URL si dispo)
     if [ -z "$TOKEN" ]; then
         if [ -n "$TOKEN_URL" ] && [ "$TOKEN_URL" != "skip" ]; then
-            echo -e "\n${PURPLE} ╭───────────────────────────────────────────────────────────${NC}"
-            echo -e "${PURPLE} │ ${YELLOW}👋 Bonjour ! Il nous faut un jeton (token) OpenShift.${NC}"
-            echo -e "${PURPLE} │ ${NC}Vous pouvez en générer un tout neuf en un clic via ce lien :${NC}"
-            echo -e "${PURPLE} │ 🌐 ${BOLD}${CYAN}${TOKEN_URL}${NC}"
-            echo -e "${PURPLE} ╰───────────────────────────────────────────────────────────${NC}\n"
+            echo -e "\n${PURPLE} ${NC}"
+            echo -e "${PURPLE}  ${YELLOW} Bonjour ! Il nous faut un jeton (token) OpenShift.${NC}"
+            echo -e "${PURPLE}  ${NC}Vous pouvez en gérer un tout neuf en un clic via ce lien :${NC}"
+            echo -e "${PURPLE}   ${BOLD}${CYAN}${TOKEN_URL}${NC}"
+            echo -e "${PURPLE} ${NC}\n"
         fi
-        read -s -p "👉 Token de connexion OpenShift : " TOKEN
+        read -s -p " Token de connexion OpenShift : " TOKEN
         echo ""
         save_to_config "TOKEN" "$TOKEN"
     fi
 
     # 4. Namespace et binaire oc
     if [ -z "$DEFAULT_NAMESPACE" ]; then
-        read -p "👉 Namespace SAS Viya [sas-viya] : " input_ns
+        read -p " Namespace SAS Viya [sas-viya] : " input_ns
         DEFAULT_NAMESPACE=${input_ns:-sas-viya}
         save_to_config "DEFAULT_NAMESPACE" "$DEFAULT_NAMESPACE"
     fi
     if [ -z "$OC_BIN_PATH" ]; then
-        read -p "👉 Chemin COMPLET du binaire oc : " OC_BIN_PATH
+        read -p " Chemin COMPLET du binaire oc : " OC_BIN_PATH
         save_to_config "OC_BIN_PATH" "$OC_BIN_PATH"
     fi
     
@@ -102,33 +102,32 @@ do_login() {
         return 0
     fi
 
-    echo -e "${CYAN}🔌 Connexion à $SERVER_URL...${NC}"
+    echo -e "${CYAN} Connexion àSERVER_URL...${NC}"
     if oc login "$SERVER_URL" --token="$TOKEN" $TLS_OPT >/dev/null 2>&1; then
-        echo -e "${GREEN}✅ Connexion réussie.${NC}"
+        echo -e "${GREEN} Connexion résie.${NC}"
         oc project "$DEFAULT_NAMESPACE" >/dev/null 2>&1
     else
-        echo -e "${RED}❌ Token invalide ou expiré.${NC}"
+        echo -e "${RED} Token invalide ou expiré{NC}"
         
-        # Affichage du rappel sympa d'URL si le token a expiré
-        echo -e "\n${PURPLE} ╭───────────────────────────────────────────────────────────${NC}"
-        echo -e "${PURPLE} │ ${YELLOW}💡 Oups ! Votre token est invalide ou a expiré.${NC}"
+        # Affichage du rappel sympa d'URL si le token a expiré       echo -e "\n${PURPLE} ${NC}"
+        echo -e "${PURPLE}  ${YELLOW} Oups ! Votre token est invalide ou a expiré{NC}"
         if [ -n "$TOKEN_URL" ] && [ "$TOKEN_URL" != "skip" ]; then
-            echo -e "${PURPLE} │ ${NC}Pas de panique, allez récupérer un nouveau token juste ici :${NC}"
-            echo -e "${PURPLE} │ 🌐 ${BOLD}${CYAN}${TOKEN_URL}${NC}"
+            echo -e "${PURPLE}  ${NC}Pas de panique, allez répér un nouveau token juste ici :${NC}"
+            echo -e "${PURPLE}   ${BOLD}${CYAN}${TOKEN_URL}${NC}"
         else
-            echo -e "${PURPLE} │ ${NC}Connectez-vous à l'interface web OpenShift pour en générer un nouveau.${NC}"
+            echo -e "${PURPLE}  ${NC}Connectez-vous à'interface web OpenShift pour en gérer un nouveau.${NC}"
         fi
-        echo -e "${PURPLE} ╰───────────────────────────────────────────────────────────${NC}\n"
+        echo -e "${PURPLE} ${NC}\n"
         
-        read -s -p "👉 Nouveau Token : " NEW_TOKEN ; echo ""
+        read -s -p " Nouveau Token : " NEW_TOKEN ; echo ""
         [ -z "$NEW_TOKEN" ] && exit 1
         TOKEN="$NEW_TOKEN"
         save_to_config "TOKEN" "$TOKEN"
         if oc login "$SERVER_URL" --token="$TOKEN" $TLS_OPT >/dev/null 2>&1; then
-            echo -e "${GREEN}✅ Connexion réussie.${NC}"
+            echo -e "${GREEN} Connexion résie.${NC}"
             oc project "$DEFAULT_NAMESPACE" >/dev/null 2>&1
         else
-            echo -e "${RED}❌ Échec critique.${NC}" ; exit 1
+            echo -e "${RED} Éhec critique.${NC}" ; exit 1
         fi
     fi
 }
@@ -138,22 +137,30 @@ do_login() {
 # ==============================================================================
 
 show_help() {
-    echo -e "${BOLD}${BLUE}======================================================${NC}"
+    echo -e "${CYAN}"
+    echo -e "   ____      _      ____   __     __ ___  __  __     _      _  _      ___   ____   ____  "
+    echo -e "  / ___|    / \    / ___|  \ \   / / |_ _| \ \/ /    / \    | || |    / _ \ |  _ \ / ___| "
+    echo -e "  \___ \   / _ \   \___ \   \ \ / /   | |   \  /    / _ \   | || |_  | | | || |_) |\___ \ "
+    echo -e "   ___) | / ___ \   ___) |   \ V /    | |   /  \   / ___ \  |__   _| | |_| ||  __/  ___) |"
+    echo -e "  |____/ /_/   \_\ |____/     \_/    |___| /_/\_\ /_/   \_\    |_|    \___/ |_|    |____/ "
+    echo -e "${NC}"
+    echo -e "${BOLD}${BLUE}========================================================================================${NC}"
     echo -e "${BOLD}   SAS VIYA 4 OPS - Aide & Utilisation${NC}"
-    echo -e "${BOLD}${BLUE}======================================================${NC}"
+    echo -e "   (c) Nicolas Houssey | https://github.com/nhousset/Viya4OC/ | https://nicolas-housset.fr/"
+    echo -e "${BOLD}${BLUE}========================================================================================${NC}"
     echo -e ""
     echo -e "${BOLD}Usage:${NC}"
     echo -e "  ./viya.sh [OPTIONS]"
     echo -e ""
     echo -e "${BOLD}Options:${NC}"
-    echo -e "  ${CYAN}-h, --help${NC}           Affiche cet écran d'aide."
-    echo -e "  ${CYAN}--cmd <script.sh>${NC}    Exécute directement un script contenu dans le dossier 'cmd'"
+    echo -e "  ${CYAN}-h, --help${NC}           Affiche cet éan d'aide."
+    echo -e "  ${CYAN}--cmd <script.sh>${NC}    Exéte directement un script contenu dans le dossier 'cmd'"
     echo -e "                       sans passer par le menu interactif. L'authentification"
-    echo -e "                       sera vérifiée avant le lancement."
+    echo -e "                       sera véfiéavant le lancement."
     echo -e ""
     echo -e "${BOLD}Exemples:${NC}"
     echo -e "  ./viya.sh                        ${CYAN}# Lance le menu interactif${NC}"
-    echo -e "  ./viya.sh --cmd check_status.sh  ${CYAN}# Exécute directement 'check_status.sh'${NC}"
+    echo -e "  ./viya.sh --cmd check_status.sh  ${CYAN}# Exéte directement 'check_status.sh'${NC}"
     echo -e ""
 }
 
@@ -164,22 +171,30 @@ show_help() {
 show_menu() {
     do_login 
     
-    # Calcul du nombre de pods en cours d'exécution
+    # Calcul du nombre de pods en cours d'exétion
     local RUNNING_COUNT=$(oc get pods -n "$DEFAULT_NAMESPACE" --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
     
     clear
-    echo -e "${BLUE}======================================================${NC}"
+    echo -e "${CYAN}"
+    echo -e "   ____      _      ____   __     __ ___  __  __     _      _  _      ___   ____   ____  "
+    echo -e "  / ___|    / \    / ___|  \ \   / / |_ _| \ \/ /    / \    | || |    / _ \ |  _ \ / ___| "
+    echo -e "  \___ \   / _ \   \___ \   \ \ / /   | |   \  /    / _ \   | || |_  | | | || |_) |\___ \ "
+    echo -e "   ___) | / ___ \   ___) |   \ V /    | |   /  \   / ___ \  |__   _| | |_| ||  __/  ___) |"
+    echo -e "  |____/ /_/   \_\ |____/     \_/    |___| /_/\_\ /_/   \_\    |_|    \___/ |_|    |____/ "
+    echo -e "${NC}"
+    echo -e "${BLUE}========================================================================================${NC}"
     echo -e "${BOLD}   SAS VIYA 4 OPS - Console d'Administration${NC}"
-    echo -e "${BLUE}======================================================${NC}"
+    echo -e "   (c) Nicolas Houssey | https://github.com/nhousset/Viya4OC/ | https://nicolas-housset.fr/"
+    echo -e "${BLUE}========================================================================================${NC}"
     echo -e " Namespace : ${CYAN}$DEFAULT_NAMESPACE${NC}"
-    echo -e " Statut    : ${GREEN}Connecté${NC} | ${YELLOW}Pods actifs: $RUNNING_COUNT${NC}"
-    echo -e "${BLUE}------------------------------------------------------${NC}"
+    echo -e " Statut    : ${GREEN}ConnectéNC} | ${YELLOW}Pods actifs: $RUNNING_COUNT${NC}"
+    echo -e "${BLUE}----------------------------------------------------------------------------------------${NC}"
 
     if [ ! -d "$CMD_DIR" ]; then mkdir -p "$CMD_DIR"; fi
 
     local files=("$CMD_DIR"/*.sh)
     if [ ! -e "${files[0]}" ]; then
-        echo -e "${RED}   (Aucun plugin trouvé)${NC}"
+        echo -e "${RED}   (Aucun plugin trouvé{NC}"
     else
         local i=1
         for f in "${files[@]}"; do
@@ -190,10 +205,10 @@ show_menu() {
         done
     fi
 
-    echo -e "${BLUE}------------------------------------------------------${NC}"
+    echo -e "${BLUE}----------------------------------------------------------------------------------------${NC}"
     echo -e " ${RED}q)${NC} Quitter & Logout      ${RED}x)${NC} Quitter (Garder session)"
-    echo -e "${BLUE}======================================================${NC}"
-    read -p "👉 Votre choix ? " CHOICE
+    echo -e "${BLUE}========================================================================================${NC}"
+    read -p " Votre choix ? " CHOICE
 
     case "$CHOICE" in
         q) oc logout ; exit 0 ;;
@@ -201,20 +216,20 @@ show_menu() {
     esac
 
     if ! [[ "$CHOICE" =~ ^[0-9]+$ ]] || [ "$CHOICE" -lt 1 ] || [ "$CHOICE" -ge $i ]; then
-        echo -e "${RED}❌ Choix invalide.${NC}" ; sleep 1 ; show_menu ; return
+        echo -e "${RED} Choix invalide.${NC}" ; sleep 1 ; show_menu ; return
     fi
 
     local SELECTED_SCRIPT="${files[$((CHOICE-1))]}"
-    echo -e "\n${YELLOW}🚀 Lancement : $(basename "$SELECTED_SCRIPT")${NC}"
-    echo -e "${BLUE}------------------------------------------------------${NC}"
+    echo -e "\n${YELLOW} Lancement : $(basename "$SELECTED_SCRIPT")${NC}"
+    echo -e "${BLUE}----------------------------------------------------------------------------------------${NC}"
     
     chmod +x "$SELECTED_SCRIPT"
     export DEFAULT_NAMESPACE AUDIT_OUT_DIR
     
     "$SELECTED_SCRIPT"
     
-    echo -e "${BLUE}------------------------------------------------------${NC}"
-    read -p "Appuyez sur Entrée pour revenir au menu..."
+    echo -e "${BLUE}----------------------------------------------------------------------------------------${NC}"
+    read -p "Appuyez sur Entrépour revenir au menu..."
     show_menu
 }
 
@@ -235,13 +250,13 @@ while [[ "$#" -gt 0 ]]; do
                 DIRECT_CMD="$2"
                 shift
             else
-                echo -e "${RED}❌ Erreur : l'argument --cmd nécessite le nom d'un script.${NC}"
+                echo -e "${RED} Erreur : l'argument --cmd néssite le nom d'un script.${NC}"
                 echo -e "Utilisez --help pour plus d'informations."
                 exit 1
             fi
             ;;
         *)
-            echo -e "${RED}❌ Option inconnue : $1${NC}"
+            echo -e "${RED} Option inconnue : $1${NC}"
             echo -e "Utilisez --help pour plus d'informations."
             exit 1
             ;;
@@ -253,15 +268,15 @@ done
 if [ -n "$DIRECT_CMD" ]; then
     TARGET_SCRIPT="$CMD_DIR/$DIRECT_CMD"
     if [ ! -f "$TARGET_SCRIPT" ]; then
-        echo -e "${RED}❌ Erreur : Le script '${DIRECT_CMD}' est introuvable dans le dossier '${CMD_DIR}'.${NC}"
+        echo -e "${RED} Erreur : Le script '${DIRECT_CMD}' est introuvable dans le dossier '${CMD_DIR}'.${NC}"
         exit 1
     fi
     
-    # Authentification requise même en mode direct
+    # Authentification requise mê en mode direct
     do_login
     
-    echo -e "\n${YELLOW}🚀 Lancement direct : ${DIRECT_CMD}${NC}"
-    echo -e "${BLUE}------------------------------------------------------${NC}"
+    echo -e "\n${YELLOW} Lancement direct : ${DIRECT_CMD}${NC}"
+    echo -e "${BLUE}----------------------------------------------------------------------------------------${NC}"
     
     chmod +x "$TARGET_SCRIPT"
     export DEFAULT_NAMESPACE AUDIT_OUT_DIR
@@ -269,6 +284,6 @@ if [ -n "$DIRECT_CMD" ]; then
     "$TARGET_SCRIPT"
     exit $?
 else
-    # Lancement du menu par défaut
+    # Lancement du menu par déut
     show_menu
 fi

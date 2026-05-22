@@ -58,7 +58,7 @@ Le projet inclut également un **launcher**, un utilitaire léger conçu pour s'
 Le launcher lit ses paramètres depuis un fichier `config.json` et exécute vos tâches selon des intervalles précis et des fenêtres horaires autorisées.
 
 Pour en savoir plus sur son fonctionnement et sa configuration, consultez la documentation dédiée :
-👉 [**Documentation du Launcher**](launcher/README.md)
+👉 [**Documentation du Launcher**](https://github.com/nhousset/Viya4OC/tree/main/launcher#readme)
 
 ## 📂 Structure du projet
 

@@ -52,12 +52,21 @@ L'outil est prêt à l'emploi grâce aux exécutables précompilés disponibles 
 > [!NOTE]
 > Ces informations seront sauvegardées localement (dans un fichier `config.env`) pour ne pas avoir à les ressaisir lors de vos prochaines sessions.
 
+## 🤖 Launcher (Tâches en arrière-plan)
+
+Le projet inclut également un **launcher**, un utilitaire léger conçu pour s'exécuter en arrière-plan (daemon) et orchestrer l'exécution régulière de commandes ou de scripts de surveillance.
+Le launcher lit ses paramètres depuis un fichier `config.json` et exécute vos tâches selon des intervalles précis et des fenêtres horaires autorisées.
+
+Pour en savoir plus sur son fonctionnement et sa configuration, consultez la documentation dédiée :
+👉 [**Documentation du Launcher**](launcher/README.md)
+
 ## 📂 Structure du projet
 
 *   `bin/` : Contient les exécutables prêts à l'emploi (`viya` pour Linux, `viya.exe` pour Windows).
 *   `go/` : Code source de l'application principale écrite en Go (`main.go`).
 *   `src/` : Code source de l'ancienne version pure bash (`viya.sh`).
 *   `cmd/` : Scripts spécialisés exécutés par l'orchestrateur (gestion des pods, quotas, logs, etc.).
+*   `launcher/` : Code source et configuration du daemon de tâches en arrière-plan.
 *   `tools/` : Outils et scripts annexes.
 
 ## 🛠️ Compilation depuis les sources (Optionnel)

@@ -16,7 +16,7 @@ Cet outil simplifie grandement la gestion, la surveillance et le dépannage de v
     *   Gestion des serveurs CAS (Démarrage, arrêt, gestion des sessions).
     *   Test de la connectivité et des routes.
     *   Consultation en direct des logs critiques (tail).
-*   **Multi-plateforme** : L'outil est compilé en Go et disponible nativement pour Windows et Linux.
+*   **Multi-plateforme** : L'outil est compilé en Go et disponible nativement pour Linux.
 
 ![Architecture Viya4OC](src/presentation.jpeg)
 

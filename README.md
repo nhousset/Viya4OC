@@ -18,6 +18,8 @@ Cet outil simplifie grandement la gestion, la surveillance et le dépannage de v
     *   Consultation en direct des logs critiques (tail).
 *   **Multi-plateforme** : L'outil est compilé en Go et disponible nativement pour Windows et Linux.
 
+![Architecture Viya4OC](src/presentation.png)
+
 ## 🚀 Installation & Utilisation
 
 L'outil est prêt à l'emploi grâce aux exécutables précompilés

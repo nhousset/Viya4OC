@@ -62,4 +62,4 @@ Pour en savoir plus sur son fonctionnement et sa configuration, consultez la doc
 ## 📂 Structure du projet
 
 *   `cmd/` : Scripts spécialisés exécutés par l'orchestrateur (gestion des pods, quotas, logs, etc.).
-*   `launcher/` : Code source et configuration du daemon de tâches en arrière-plan.
+*   `launcher/` : Daemon de tâches en arrière-plan.

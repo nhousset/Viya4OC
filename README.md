@@ -20,12 +20,13 @@ Cet outil simplifie grandement la gestion, la surveillance et le dépannage de v
 
 ## 🚀 Installation & Utilisation
 
-L'outil est prêt à l'emploi grâce aux exécutables précompilés disponibles dans le dossier `bin`.
+L'outil est prêt à l'emploi grâce aux exécutables précompilés
 
 ### Prérequis
 
 *   Le binaire client OpenShift (`oc`) doit être installé sur votre machine.
 *   Un accès valide à un cluster OpenShift hébergeant SAS Viya 4.
+*   le binaire viya et le contenu de cmd doit disposer des droits d'execution.
 
 ### Lancement rapide
 

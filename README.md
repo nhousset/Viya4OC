@@ -34,13 +34,9 @@ L'outil est prêt à l'emploi grâce aux exécutables précompilés disponibles 
 
 **Sur Linux / macOS :**
 ```bash
-./bin/viya
+./viya
 ```
 
-**Sur Windows :**
-```powershell
-.\bin\viya.exe
-```
 
 3.  **Configuration initiale** : Lors du tout premier lancement, l'outil vous guidera pour configurer vos accès :
     *   URL de l'interface OpenShift (pour récupérer le token).
@@ -62,6 +58,5 @@ Pour en savoir plus sur son fonctionnement et sa configuration, consultez la doc
 
 ## 📂 Structure du projet
 
-*   `bin/` : Contient les exécutables prêts à l'emploi (`viya` pour Linux, `viya.exe` pour Windows).
 *   `cmd/` : Scripts spécialisés exécutés par l'orchestrateur (gestion des pods, quotas, logs, etc.).
 *   `launcher/` : Code source et configuration du daemon de tâches en arrière-plan.
